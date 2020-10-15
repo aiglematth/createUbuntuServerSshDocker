@@ -110,12 +110,11 @@ if __name__ == "__main__":
 	parser.add_argument("--nombre", type=int, help="Précise le nombre de containers")
 	parser.add_argument("--ssh-key", type=str, help="Précise le chemin vers la clef publique à utiliser")
 	parser.add_argument("--interactive", action="store_true", help="Se lance en premier plan")
-	parser.add_argument("--kill-all", action="store_true", help="Kill TOUT les containers au début et à la fin du programme")
+	parser.add_argument("--kill-all", action="store_true", help="Kill TOUT les containers au début du programme")
 
 	args = parser.parse_args()
 
 	if args.nombre:
-
 		if args.kill_all:
 			killAll()
 
@@ -130,9 +129,5 @@ if __name__ == "__main__":
 		if args.interactive:
 			input("\n### Appuyer pour détruire les containers ###")
 			cluster.kill()
-
-		if args.kill_all:
-			killAll()
-
 	else:
 		print(parser.format_help())
