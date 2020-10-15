@@ -62,12 +62,16 @@ class Cluster():
 		FROM ubuntu:bionic
 
 		RUN apt-get update && apt-get install openssh-server sudo -y
-		RUN useradd -rm -d /home/ubuntu -s /bin/bash -g root -G sudo -u 1000 user 
+		RUN useradd -rm -d /home/ubuntu -s /bin/bash -g root -G sudo -u 1000 user
+		RUN sed -i "s/.*PermitRootLogin.*/PermitRootLogin yes/g" /etc/ssh/sshd_config
 		RUN echo 'user:user' | chpasswd
 		RUN service ssh start
 		RUN mkdir /home/ubuntu/.ssh
+		RUN mkdir /root/.ssh
 
 		COPY id_rsa.pub /home/ubuntu/.ssh/authorized_keys
+                COPY id_rsa.pub /root/.ssh/authorized_keys
+
 
 		EXPOSE 22
 
