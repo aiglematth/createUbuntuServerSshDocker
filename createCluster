@@ -1,0 +1,3 @@
+#!/bin/bash
+
+sudo python3 /usr/bin/createCluster.py --ssh-key $HOME/.ssh/id_rsa.pub $@

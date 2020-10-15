@@ -8,22 +8,26 @@ import docker
 import os
 
 #Fonctions
-def exportSshKey(keyFile="~/.ssh/id_rsa.pub"):
+def createContext():
+	"""
+	On se place dans un dossier où on peut faire touuut ce qu'on veut
+	"""
+	try:
+		os.mkdir("/tmp/.createCluster")
+	except:
+		pass
+	os.chdir("/tmp/.createCluster")
+
+def exportSshKey(keyFile=f"~/.ssh/id_rsa.pub"):
 	"""
 	Exporte la clef ssh vers le rep courant
 	:param keyFile: Le fichier clef .pub
 	"""
+	print("KEEE", keyFile)
 	with open(keyFile, "r") as file:
 		key = file.read()
 	with open("id_rsa.pub", "w") as file:
 		file.write(key)	
-
-def removeSshKey():
-	"""
-	Exporte la clef ssh vers le rep courant
-	:param keyFile: Le fichier clef .pub
-	"""
-	os.remove("id_rsa.pub")
 	
 def killAll():
 	"""
@@ -42,6 +46,7 @@ class Cluster():
 		"""
 		Constructeur de la classe
 		"""
+		createContext()
 		self.tag        = "myssh"
 		self.docker     = docker.from_env()
 		self.client     = docker.DockerClient()
@@ -52,12 +57,6 @@ class Cluster():
 		Permet de build l'image de notre serveur ssh
 		:param keyFile: La clef publique à utiliser
 		"""
-		try:
-			self.docker.images.get(self.tag)
-			return True
-		except:
-			pass
-
 		exportSshKey(keyFile)	
 		content = """
 		FROM ubuntu:bionic
@@ -74,8 +73,10 @@ class Cluster():
 
 		CMD ["/usr/sbin/sshd", "-D"]
 		"""
-		removeSshKey()
-		return self.docker.images.build(path=".", tag=self.tag)
+		with open("Dockerfile", "w") as file:
+			file.write(content)
+		self.docker.images.build(path=".", tag=self.tag)
+
 
 	def run(self, nbr):
 		"""
@@ -111,23 +112,31 @@ if __name__ == "__main__":
 	parser.add_argument("--ssh-key", type=str, help="Précise le chemin vers la clef publique à utiliser")
 	parser.add_argument("--interactive", action="store_true", help="Se lance en premier plan")
 	parser.add_argument("--kill-all", action="store_true", help="Kill TOUT les containers au début du programme")
+	parser.add_argument("--verbose", action="store_true", help="Permet d'afficher un peut de texte nous renseignant sur la bonne exe du programme")
 
 	args = parser.parse_args()
 
-	if args.nombre:
-		if args.kill_all:
-			killAll()
+	if args.kill_all:
+		if args.verbose: print("### KILLALL ###")		
+		killAll()
+
+	if args.nombre != None and args.nombre > 0:
 
 		cluster = Cluster()
 		if args.ssh_key:
+			if args.verbose: print(f"### BUILD WITH {args.ssh_key} KEY ###")		
 			cluster.build(args.ssh_key)
 		else:
-			cluster.build
+			if args.verbose: print(f"### BUILD WITH AUTO KEY ###")		
+			cluster.build()
+		
+		if args.verbose: print(f"### RUN {args.nombre} CONTAINERS ###")		
 		cluster.run(args.nombre)
 		print(cluster)
 
 		if args.interactive:
 			input("\n### Appuyer pour détruire les containers ###")
 			cluster.kill()
-	else:
+	
+	if not args.nombre and not args.kill_all:
 		print(parser.format_help())
